@@ -2,8 +2,9 @@
 /**
  * Plugin Name: WPA Copy/Paste Helper
  * Description: Affiche dans "Outils" le contenu .htaccess et wp-config.php optimisé, générique, ultra commenté, prêt à copier-coller pour WordPress, avec de jolies icônes.
- * Version: 1.2
+ * Version: 1.5
  * Author: Alexandre Trocmé
+ * Author URI: https://wpalex.fr
  */
 
 if (!defined('ABSPATH')) exit;
@@ -19,50 +20,83 @@ add_action('admin_menu', function() {
     );
 });
 
-// Affichage de la page unique (avec emojis)
+// Ajoute le lien "Consulter" dans la liste des plugins
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), function($links) {
+    $url = admin_url('tools.php?page=wpa-copypaste');
+    array_unshift($links, '<a href="' . esc_url($url) . '">Consulter</a>');
+    return $links;
+});
+
 function wpa_copypaste_page() { ?>
+    <style>
+        .wpa-tabs { margin-bottom: 1.2em; border-bottom: 1px solid #eee; display: flex; gap: 0.5em; }
+        .wpa-tabs a { display:inline-block; padding:8px 22px; border:1px solid #ddd; border-bottom:none; background:#f8f8f8; color:#333; text-decoration:none; border-radius:8px 8px 0 0; font-size:1.1em;}
+        .wpa-tabs a.active { background:#fff; border-bottom:1px solid #fff; font-weight:bold; color:#2271b1;}
+        .wpa-panel { display:none; background:#fff; border:1px solid #ddd; border-radius:0 8px 8px 8px; padding:24px 24px 12px 24px; }
+        .wpa-panel.active { display:block; }
+        @media (max-width:800px) {
+            .wpa-panels-flex { flex-direction:column; gap:16px !important;}
+        }
+        .wpa-contact {margin:2em 0 1em 0;text-align:center;color:#555;font-size:1.05em;}
+        .wpa-contact a {text-decoration:none;color:#2271b1;}
+        .wpa-contact a:hover {text-decoration:underline;}
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded',function(){
+            const tabs = document.querySelectorAll('.wpa-tabs a');
+            const panels = document.querySelectorAll('.wpa-panel');
+            tabs.forEach(tab=>{
+                tab.addEventListener('click',function(e){
+                    e.preventDefault();
+                    tabs.forEach(t=>t.classList.remove('active'));
+                    panels.forEach(p=>p.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.panel).classList.add('active');
+                });
+            });
+            // Afficher le premier onglet par défaut
+            if(document.querySelector('.wpa-tabs a.active')===null && tabs.length) {
+                tabs[0].classList.add('active');
+                panels[0].classList.add('active');
+            }
+        });
+    </script>
     <div class="wrap">
         <h1 style="display:flex;align-items:center;gap:.5em;">
             <span style="font-size:2em;">📋</span>
             WPA Copy/Paste – .htaccess &amp; wp-config.php
         </h1>
-        <p>
-            <span style="font-size:1.3em;">🔒</span>
-            <b>Sécurité</b> &nbsp;
-            <span style="font-size:1.3em;">🚀</span>
-            <b>Performance</b> &nbsp;
-            <span style="font-size:1.3em;">🛡️</span>
-            <b>WordPress clean</b>
-        </p>
-        <p>
-            <span style="font-size:1.1em;">👆</span>
-            Sélectionne, copie, et colle dans tes fichiers <b>.htaccess</b> ou <b>wp-config.php</b>.<br>
-            <span style="color:#007cba">Tout est ultra commenté, générique et prêt à l’emploi&nbsp;!</span>
-        </p>
-
-        <div style="display:flex;flex-wrap:wrap;gap:32px">
-            <div style="flex:1 1 420px;min-width:350px;max-width:640px">
+        <div class="wpa-tabs">
+            <a href="#" data-panel="wpa-tab-htaccess" class="active">📂 .htaccess</a>
+            <a href="#" data-panel="wpa-tab-wpconfig">⚙️ wp-config.php</a>
+        </div>
+        <div class="wpa-panels-flex" style="display:flex;gap:32px;flex-wrap:wrap;">
+            <div class="wpa-panel active" id="wpa-tab-htaccess" style="flex:1 1 420px;min-width:350px;max-width:640px">
                 <h2 style="display:flex;align-items:center;gap:.5em;">
                     <span style="font-size:1.6em;">📂</span> .htaccess (WordPress générique)
                 </h2>
-                <textarea style="width:100%;height:520px;font-family:monospace;font-size:1em;padding:.7em;background:#f8fafe;border:1px solid #bcdff7;border-radius:8px;" readonly onclick="this.select()"><?php echo htmlspecialchars(wpa_copypaste_htaccess(), ENT_QUOTES); ?></textarea>
+                <textarea style="width:100%;height:540px;font-family:monospace;font-size:1em;padding:.7em;background:#f8fafe;border:1px solid #bcdff7;border-radius:8px;" readonly onclick="this.select()"><?php echo htmlspecialchars(wpa_copypaste_htaccess(), ENT_QUOTES); ?></textarea>
             </div>
-            <div style="flex:1 1 420px;min-width:350px;max-width:640px">
+            <div class="wpa-panel" id="wpa-tab-wpconfig" style="flex:1 1 420px;min-width:350px;max-width:640px">
                 <h2 style="display:flex;align-items:center;gap:.5em;">
                     <span style="font-size:1.6em;">⚙️</span> wp-config.php (options avancées)
                 </h2>
-                <textarea style="width:100%;height:520px;font-family:monospace;font-size:1em;padding:.7em;background:#f8fafe;border:1px solid #bcdff7;border-radius:8px;" readonly onclick="this.select()"><?php echo htmlspecialchars(wpa_copypaste_wpconfig(), ENT_QUOTES); ?></textarea>
+                <textarea style="width:100%;height:540px;font-family:monospace;font-size:1em;padding:.7em;background:#f8fafe;border:1px solid #bcdff7;border-radius:8px;" readonly onclick="this.select()"><?php echo htmlspecialchars(wpa_copypaste_wpconfig(), ENT_QUOTES); ?></textarea>
             </div>
         </div>
-        <div style="margin-top:2em;font-size:1.1em;">
-            <span style="font-size:1.2em;">💡</span>
+        <div class="wpa-contact">
+            <span style="font-size:1.15em;">👤</span>
+            <a href="https://wpalex.fr" target="_blank" rel="noopener noreferrer">Alexandre Trocmé – wpalex.fr</a>
+        </div>
+        <div style="margin-top:1.5em;font-size:1.08em;text-align:center;">
+            <span style="font-size:1.1em;">💡</span>
             <b>Astuce</b> : Clique dans une zone puis <b>Ctrl+A</b> & <b>Ctrl+C</b> pour tout copier !
         </div>
     </div>
 <?php
 }
 
-// Contenu htaccess avec emojis en commentaire pour chaque bloc
+// Contenu htaccess avec emojis en commentaire pour chaque bloc, + exemple redirection 301 commentée
 function wpa_copypaste_htaccess() {
 return <<<HTACCESS
 # =========================================================
@@ -120,6 +154,14 @@ Options All -Indexes
 # 🌐 Redirection www vers non-www (adapter selon votre préférence)
 RewriteCond %{HTTP_HOST} ^www\.(.+)\$ [NC]
 RewriteRule ^(.*)\$ https://%1/\$1 [R=301,L]
+
+# 🔁 Exemple de redirection 301 personnalisée
+# -----------------------------------------------
+# 🔗 Redirige l'ancienne page "/ancienne-page/" vers la nouvelle "/nouvelle-page/"
+Redirect 301 /ancienne-page/ /nouvelle-page/
+# 🔗 Pour une cible externe :
+# Redirect 301 /ancienne-page/ https://exemple.com/nouvelle-page/
+# -----------------------------------------------
 
 # 🛡️ Active certains headers de sécurité (adaptez selon vos plugins/themes)
 <IfModule mod_headers.c>
