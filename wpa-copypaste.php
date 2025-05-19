@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: WPA Copy/Paste Helper
- * Description: Affiche dans "Outils" le contenu .htaccess et wp-config.php optimisé, générique, ultra commenté, prêt à copier-coller pour WordPress, avec de jolies icônes.
- * Version: 1.5
+ * Plugin Name: WP Alex - Copy/Paste Helper
+ * Description: Affiche dans "Outils" le contenu .htaccess et wp-config.php optimisé, générique, ultra commenté, prêt à copier-coller pour WordPress.
+ * Version: 1.9
  * Author: Alexandre Trocmé
  * Author URI: https://wpalex.fr
  */
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit;
 // Ajoute le menu dans Outils
 add_action('admin_menu', function() {
     add_management_page(
-        'WPA Copy/Paste',
+        'WP Alex - Copy/Paste : htaccess & wp-config.php',
         'WPA Copy/Paste',
         'manage_options',
         'wpa-copypaste',
@@ -37,9 +37,10 @@ function wpa_copypaste_page() { ?>
         @media (max-width:800px) {
             .wpa-panels-flex { flex-direction:column; gap:16px !important;}
         }
-        .wpa-contact {margin:2em 0 1em 0;text-align:center;color:#555;font-size:1.05em;}
+        .wpa-contact {margin:2.2em 0 0.7em 0;text-align:left;color:#555;font-size:1.09em;font-weight:bold;}
         .wpa-contact a {text-decoration:none;color:#2271b1;}
         .wpa-contact a:hover {text-decoration:underline;}
+        .wpa-tip {margin:2em 0 0 0;font-size:1.08em;text-align:left;}
     </style>
     <script>
         document.addEventListener('DOMContentLoaded',function(){
@@ -62,9 +63,9 @@ function wpa_copypaste_page() { ?>
         });
     </script>
     <div class="wrap">
-        <h1 style="display:flex;align-items:center;gap:.5em;">
+        <h1 style="display:flex;align-items:center;gap:.5em;font-size:1.5em;">
             <span style="font-size:2em;">📋</span>
-            WPA Copy/Paste – .htaccess &amp; wp-config.php
+            WP Alex - Copy/Paste : htaccess &amp; wp-config.php
         </h1>
         <div class="wpa-tabs">
             <a href="#" data-panel="wpa-tab-htaccess" class="active">📂 .htaccess</a>
@@ -84,13 +85,13 @@ function wpa_copypaste_page() { ?>
                 <textarea style="width:100%;height:540px;font-family:monospace;font-size:1em;padding:.7em;background:#f8fafe;border:1px solid #bcdff7;border-radius:8px;" readonly onclick="this.select()"><?php echo htmlspecialchars(wpa_copypaste_wpconfig(), ENT_QUOTES); ?></textarea>
             </div>
         </div>
+        <div class="wpa-tip">
+            <span style="font-size:1.1em;">💡</span>
+            <b>Astuce</b> : Clique dans une zone puis <b>Ctrl+A</b> & <b>Ctrl+C</b> pour tout copier !
+        </div>
         <div class="wpa-contact">
             <span style="font-size:1.15em;">👤</span>
             <a href="https://wpalex.fr" target="_blank" rel="noopener noreferrer">Alexandre Trocmé – wpalex.fr</a>
-        </div>
-        <div style="margin-top:1.5em;font-size:1.08em;text-align:center;">
-            <span style="font-size:1.1em;">💡</span>
-            <b>Astuce</b> : Clique dans une zone puis <b>Ctrl+A</b> & <b>Ctrl+C</b> pour tout copier !
         </div>
     </div>
 <?php
