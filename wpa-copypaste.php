@@ -197,18 +197,33 @@ RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 # 🔁 Rediriger un fichier précis (exemple : PDF déplacé)
 # Redirect 301 /docs/ancien-fichier.pdf /docs/nouveau-fichier.pdf
 
-# ————————————— HEADERS DE SÉCURITÉ —————————————
-
+# ==========================================
+# 🛡️ HEADERS HTTP DE SÉCURITÉ
+# ==========================================
 <IfModule mod_headers.c>
-    Header set Permissions-Policy "geolocation=(), camera=(), microphone=(), fullscreen=(self)"
+    # HSTS : force HTTPS pour tous les navigateurs compatibles
     Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+
+    # Protection XSS
     Header set X-XSS-Protection "1; mode=block"
+
+    # Empêche la détection automatique du type MIME (protection uploads)
     Header set X-Content-Type-Options "nosniff"
+
+    # Interdit le framing du site (clickjacking)
     Header always append X-Frame-Options SAMEORIGIN
+
+    # Politique de référent stricte (protection vie privée)
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy :
+    # img-src * data: => autorise les images depuis n'importe où + base64, évite le blocage des thumbs plugins/CDN.
     Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data:; font-src 'self';"
-    # 🖼️ Astuce : img-src * data: permet l’affichage des images plugins, thumbs dynamiques, CDN externes, etc.
+
+    # Feature Policy (Permissions Policy) : désactive un maximum de permissions navigateur
+    Header set Feature-Policy "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'self'; payment 'none';"
 </IfModule>
+
 
 # ———————————— OPTIMISATIONS & CACHE ————————————
 
@@ -293,7 +308,6 @@ FileETag None
 # 👉 Prêt pour mutualisés modernes, sans blocage des thumbs plugins.
 # Ajoutez vos redirections 301 personnalisées ci-dessus, en suivant les exemples commentés.
 # =========================================================
-
 HTACCESS;
 }
 
