@@ -101,70 +101,104 @@ function wpa_copypaste_page() { ?>
 function wpa_copypaste_htaccess() {
 return <<<HTACCESS
 # =========================================================
-# 📂 .htaccess générique WordPress – sécurité & optimisation
-# WPAlex – https://github.com/wpalex
+# 📂 .htaccess WordPress – Sécurité, Performance & Optimisations
+# Mutualisés modernes (o2switch, Infomaniak), Blocksy, Elementor, Gutenberg, etc.
+# Dernière révision : 2025-05
 # =========================================================
 
-# 👤 Bloque l'énumération d'auteurs (évite la découverte d'utilisateurs)
-<IfModule mod_rewrite.c>
-    RewriteCond %{QUERY_STRING} ^author=([0-9]+)
-    RewriteRule .* - [F,L]
-</IfModule>
+# ———————————————— SÉCURITÉ ————————————————
 
-# 💾 Interdit le téléchargement de sauvegardes SQL
-<FilesMatch "\\.(sql.gz|sql.zip|sql)\$">
-    Deny from all
-</FilesMatch>
-
-# 📑 Bloque l'accès aux fichiers readme et license
-<FilesMatch "readme.html|license.txt">
-    Deny from all
-</FilesMatch>
-
-# 🚫 Bloque l'accès à xmlrpc.php (si non utilisé)
+# 👤 Désactive XML-RPC (API rarement utile)
 <Files xmlrpc.php>
     Order Deny,Allow
     Deny from all
 </Files>
 
-# 🪵 Bloque la lecture des fichiers error_log
-<FilesMatch "error_log">
+# 📑 Bloque l'accès aux fichiers sensibles (readme, changelog, debug, license)
+# ⚠️ Ne bloque pas les images, vignettes, ou thumbs plugins !
+<FilesMatch "^(readme|changelog|debug|license)\.(txt|md|log|html?)$">
     Deny from all
 </FilesMatch>
 
-# 🗨️ Protection anti-spam basique sur commentaires (adapter domaine si besoin)
+# 📝 Retourne une 404 sur readme.html (évite détection auto)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^readme\.html$ - [R=404,L,NC]
+</IfModule>
+
+# 🕵️‍♂️ Protection anti-disclosure PHP (évite scans infos serveurs)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} \=PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [NC]
+    RewriteRule .* - [F]
+</IfModule>
+
+# 🗂️ Désactive le listing des dossiers (évite affichage du contenu)
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# 🧑‍💻 Bloque l'énumération d'auteurs (évite la découverte de comptes)
+<IfModule mod_rewrite.c>
+    RewriteCond %{QUERY_STRING} ^author=([0-9]+)
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# 🗨️ Anti-spam simple sur commentaires
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{REQUEST_METHOD} POST
     RewriteCond %{REQUEST_URI} .wp-comments-post\.php*
     # RewriteCond %{HTTP_REFERER} !example.com.* [OR]
-    RewriteCond %{HTTP_USER_AGENT} ^\$
+    RewriteCond %{HTTP_USER_AGENT} ^$
     RewriteRule .* - [F,L]
 </IfModule>
 
-# 🗂️ Désactive le listing des dossiers
-Options All -Indexes
+# 💾 Interdit le téléchargement de sauvegardes SQL
+<FilesMatch "\.(sql.gz|sql.zip|sql)$">
+    Deny from all
+</FilesMatch>
 
-# 🔒 Force le HTTPS sur tout le site (adaptez pour votre hébergeur si besoin)
+# —————————— REDIRECTIONS & HTTPS ——————————
+
+# 🔒 Force le HTTPS sur tout le site (adapter si besoin)
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{HTTPS} !=on
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
-# 🌐 Redirection www vers non-www (adapter selon votre préférence)
-RewriteCond %{HTTP_HOST} ^www\.(.+)\$ [NC]
-RewriteRule ^(.*)\$ https://%1/\$1 [R=301,L]
+# 🌐 Redirection www vers non-www (adapter selon préférence)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-# 🔁 Exemple de redirection 301 personnalisée
-# -----------------------------------------------
-# 🔗 Redirige l'ancienne page "/ancienne-page/" vers la nouvelle "/nouvelle-page/"
-Redirect 301 /ancienne-page/ /nouvelle-page/
-# 🔗 Pour une cible externe :
-# Redirect 301 /ancienne-page/ https://exemple.com/nouvelle-page/
-# -----------------------------------------------
+# ———— Exemples de redirections 301 personnalisées ————
 
-# 🛡️ Active certains headers de sécurité (adaptez selon vos plugins/themes)
+# 🔁 Rediriger une ancienne page interne vers la nouvelle URL interne
+# Redirect 301 /ancienne-page/ /nouvelle-page/
+
+# 🔁 Rediriger une ancienne page vers une URL externe (site tiers)
+# Redirect 301 /ancienne-page-externe/ https://exemple.com/nouvelle-page/
+
+# 🔁 Rediriger tout un dossier/chemin
+# Redirect 301 /blog-archive/ /actualites/
+
+# 🔁 Rediriger plusieurs anciennes URLs vers la même page (multiples règles)
+# Redirect 301 /ancien-produit-1/ /nouveau-produit/
+# Redirect 301 /ancien-produit-2/ /nouveau-produit/
+
+# 🔁 Rediriger tout le site HTTP vers HTTPS (si pas déjà géré plus haut)
+# (règle déjà présente, ne pas dupliquer)
+
+# 🔁 Rediriger une ancienne catégorie vers une nouvelle (WordPress)
+# Redirect 301 /category/ancienne-categorie/ /category/nouvelle-categorie/
+
+# 🔁 Rediriger un fichier précis (exemple : PDF déplacé)
+# Redirect 301 /docs/ancien-fichier.pdf /docs/nouveau-fichier.pdf
+
+# ————————————— HEADERS DE SÉCURITÉ —————————————
+
 <IfModule mod_headers.c>
     Header set Permissions-Policy "geolocation=(), camera=(), microphone=(), fullscreen=(self)"
     Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
@@ -172,44 +206,76 @@ Redirect 301 /ancienne-page/ /nouvelle-page/
     Header set X-Content-Type-Options "nosniff"
     Header always append X-Frame-Options SAMEORIGIN
     Header set Referrer-Policy "strict-origin-when-cross-origin"
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
-    Header set Feature-Policy "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'self'; payment 'none';"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data:; font-src 'self';"
+    # 🖼️ Astuce : img-src * data: permet l’affichage des images plugins, thumbs dynamiques, CDN externes, etc.
 </IfModule>
 
-# ⏳ Expire headers – met en cache les ressources statiques
+# ———————————— OPTIMISATIONS & CACHE ————————————
+
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .atom .css .js .json .rss .vtt .xml
+    AddType image/avif avif
+    AddType image/avif-sequence avifs
+</IfModule>
+
+# Désactive les headers ETag (évite les soucis de cache mal géré)
+<IfModule mod_headers.c>
+    Header unset ETag
+</IfModule>
+FileETag None
+
+# ⏳ Expire headers par type de ressource (contrôle le cache navigateur)
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
     ExpiresByType text/html "access plus 0 seconds"
     ExpiresByType application/json "access plus 0 seconds"
     ExpiresByType text/xml "access plus 0 seconds"
-    ExpiresByType image/jpg "access plus 6 months"
-    ExpiresByType image/jpeg "access plus 6 months"
-    ExpiresByType image/png "access plus 6 months"
-    ExpiresByType image/gif "access plus 6 months"
-    ExpiresByType image/webp "access plus 6 months"
-    ExpiresByType image/svg+xml "access plus 6 months"
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType application/x-javascript "access plus 1 month"
+    ExpiresByType application/xml "access plus 0 seconds"
+    ExpiresByType application/rss+xml "access plus 1 hour"
+    ExpiresByType application/atom+xml "access plus 1 hour"
+    ExpiresByType image/x-icon "access plus 1 week"
+    ExpiresByType image/gif "access plus 4 months"
+    ExpiresByType image/png "access plus 4 months"
+    ExpiresByType image/jpeg "access plus 4 months"
+    ExpiresByType image/webp "access plus 4 months"
+    ExpiresByType video/ogg "access plus 4 months"
+    ExpiresByType audio/ogg "access plus 4 months"
+    ExpiresByType video/mp4 "access plus 4 months"
+    ExpiresByType video/webm "access plus 4 months"
+    ExpiresByType image/avif "access plus 4 months"
+    ExpiresByType image/avif-sequence "access plus 4 months"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/x-javascript "access plus 1 year"
+    ExpiresByType font/ttf "access plus 4 months"
+    ExpiresByType font/otf "access plus 4 months"
+    ExpiresByType font/woff "access plus 4 months"
+    ExpiresByType font/woff2 "access plus 4 months"
+    ExpiresByType image/svg+xml "access plus 4 months"
 </IfModule>
 
-# 🗜️ Compression GZIP (si supporté par l'hébergeur)
-<IfModule mod_filter.c>
-    <IfModule mod_deflate.c>
-        AddOutputFilterByType DEFLATE text/plain text/html text/xml text/css
-        AddOutputFilterByType DEFLATE application/xml application/xhtml+xml application/rss+xml application/javascript application/x-javascript
-        AddOutputFilterByType DEFLATE font/ttf font/otf font/woff image/svg+xml image/x-icon
+# 📦 Compression Gzip avancée
+<IfModule mod_deflate.c>
+    SetOutputFilter DEFLATE
+    <IfModule mod_setenvif.c>
         <IfModule mod_headers.c>
-            Header append Vary User-Agent
+            SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s*,?\s*)+|[X~-]{4,13}$ HAVE_Accept-Encoding
+            RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
+            SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|rar|zip|exe|flv|mov|wma|mp3|avi|swf|mp?g|mp4|webm|webp|pdf)$ no-gzip dont-vary
         </IfModule>
-        BrowserMatch ^Mozilla/4 gzip-only-text/html
-        BrowserMatch ^Mozilla/4\.0[678] no-gzip
-        BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    </IfModule>
+    <IfModule mod_filter.c>
+        AddOutputFilterByType DEFLATE application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/html text/plain text/x-component text/xml
+    </IfModule>
+    <IfModule mod_headers.c>
+        Header append Vary: Accept-Encoding
     </IfModule>
 </IfModule>
 
-# =============== Règles natives WordPress ===============
+# ———————————— RÈGLES WORDPRESS ————————————
+
 # 📝 Ne pas modifier cette section !
 # BEGIN WordPress
 <IfModule mod_rewrite.c>
@@ -222,6 +288,12 @@ Redirect 301 /ancienne-page/ /nouvelle-page/
     RewriteRule . /index.php [L]
 </IfModule>
 # END WordPress
+
+# =========================================================
+# 👉 Prêt pour mutualisés modernes, sans blocage des thumbs plugins.
+# Ajoutez vos redirections 301 personnalisées ci-dessus, en suivant les exemples commentés.
+# =========================================================
+
 HTACCESS;
 }
 
