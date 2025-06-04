@@ -102,74 +102,80 @@ function wpa_copypaste_htaccess() {
 return <<<HTACCESS
 # =========================================================
 # 📂 .htaccess WordPress – Sécurité, Performance & Optimisations
-# Mutualisés modernes (o2switch, Infomaniak), Blocksy, Elementor, Gutenberg, etc.
-# Dernière révision : 2025-05
+# Environnement : o2switch / Blocksy / Elementor / Gutenberg / mutualisé
+# Dernière révision : 2025-06
 # =========================================================
 
-# ———————————————— SÉCURITÉ ————————————————
+# ———————————— 🔥 Pagespeed désactivé (stabilité visuelle WP)
+<IfModule pagespeed_module>
+  ModPagespeed off
+</IfModule>
 
-# 👤 Désactive XML-RPC (API rarement utile)
+
+# ———————————————— 🔐 SÉCURITÉ ————————————————
+
+# 🚫 Désactive XML-RPC (API obsolète sauf cas spécifiques)
 <Files xmlrpc.php>
-    Order Deny,Allow
-    Deny from all
+  Order Deny,Allow
+  Deny from all
 </Files>
 
-# 📑 Bloque l'accès aux fichiers sensibles (readme, changelog, debug, license)
-# ⚠️ Ne bloque pas les images, vignettes, ou thumbs plugins !
+# 🚫 Bloque accès aux fichiers sensibles
 <FilesMatch "^(readme|changelog|debug|license)\.(txt|md|log|html?)$">
-    Deny from all
+  Deny from all
 </FilesMatch>
 
-# 📝 Retourne une 404 sur readme.html (évite détection auto)
+# 🔍 Force une 404 si readme.html est demandé
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-    RewriteRule ^readme\.html$ - [R=404,L,NC]
+  RewriteEngine On
+  RewriteRule ^readme\.html$ - [R=404,L,NC]
 </IfModule>
 
-# 🕵️‍♂️ Protection anti-disclosure PHP (évite scans infos serveurs)
+# 🕵️‍♂️ Anti-disclosure PHP (protection scans de debug)
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{QUERY_STRING} \=PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [NC]
-    RewriteRule .* - [F]
+  RewriteCond %{QUERY_STRING} \=PHP[0-9a-f\-]{36} [NC]
+  RewriteRule .* - [F]
 </IfModule>
 
-# 🗂️ Désactive le listing des dossiers (évite affichage du contenu)
+# 🚫 Interdiction du listing des répertoires
 <IfModule mod_autoindex.c>
-    Options -Indexes
+  Options -Indexes
 </IfModule>
 
-# 🧑‍💻 Bloque l'énumération d'auteurs (évite la découverte de comptes)
+# 👥 Bloque l'énumération des auteurs WordPress
 <IfModule mod_rewrite.c>
-    RewriteCond %{QUERY_STRING} ^author=([0-9]+)
-    RewriteRule .* - [F,L]
+  RewriteCond %{QUERY_STRING} ^author=([0-9]+)
+  RewriteRule .* - [F,L]
 </IfModule>
 
-# 🗨️ Anti-spam simple sur commentaires
+# 🛡️ Bloque le spam basique sur les commentaires
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{REQUEST_METHOD} POST
-    RewriteCond %{REQUEST_URI} .wp-comments-post\.php*
-    # RewriteCond %{HTTP_REFERER} !example.com.* [OR]
-    RewriteCond %{HTTP_USER_AGENT} ^$
-    RewriteRule .* - [F,L]
+  RewriteCond %{REQUEST_METHOD} POST
+  RewriteCond %{REQUEST_URI} .wp-comments-post\.php*
+  RewriteCond %{HTTP_USER_AGENT} ^$
+  RewriteRule .* - [F,L]
 </IfModule>
 
-# 💾 Interdit le téléchargement de sauvegardes SQL
-<FilesMatch "\.(sql.gz|sql.zip|sql)$">
-    Deny from all
+# 🔒 Interdiction de téléchargement de fichiers SQL de backup
+<FilesMatch "\.(sql|sql\.gz|sql\.zip)$">
+  Deny from all
 </FilesMatch>
 
-# —————————— REDIRECTIONS & HTTPS ——————————
+# 🧱 Sécurise fichiers de config sensibles
+<FilesMatch "\.(bak|config|env|ini|log|sh|inc|swp|dist|psd)$">
+  Require all denied
+</FilesMatch>
 
-# 🔒 Force le HTTPS sur tout le site (adapter si besoin)
+
+# ——————————————— 🌍 REDIRECTIONS & HTTPS ———————————————
+
+# 🔒 Force HTTPS (si pas déjà activé côté serveur)
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{HTTPS} !=on
-    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
-# 🌐 Redirection www vers non-www (adapter selon préférence)
+# 🌐 Redirige www vers non-www (modifier selon besoin)
 RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
@@ -184,130 +190,110 @@ RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 # 🔁 Rediriger tout un dossier/chemin
 # Redirect 301 /blog-archive/ /actualites/
 
-# 🔁 Rediriger plusieurs anciennes URLs vers la même page (multiples règles)
+# 🔁 Rediriger plusieurs anciennes URLs vers la même page
 # Redirect 301 /ancien-produit-1/ /nouveau-produit/
 # Redirect 301 /ancien-produit-2/ /nouveau-produit/
-
-# 🔁 Rediriger tout le site HTTP vers HTTPS (si pas déjà géré plus haut)
-# (règle déjà présente, ne pas dupliquer)
 
 # 🔁 Rediriger une ancienne catégorie vers une nouvelle (WordPress)
 # Redirect 301 /category/ancienne-categorie/ /category/nouvelle-categorie/
 
-# 🔁 Rediriger un fichier précis (exemple : PDF déplacé)
+# 🔁 Rediriger un fichier précis (exemple : PDF déplacé)
 # Redirect 301 /docs/ancien-fichier.pdf /docs/nouveau-fichier.pdf
 
-# ==========================================
-# 🛡️ HEADERS HTTP DE SÉCURITÉ
-# ==========================================
+
+# ——————————————— 🛡️ HEADERS HTTP DE SÉCURITÉ ———————————————
+
 <IfModule mod_headers.c>
-    # HSTS : force HTTPS pour tous les navigateurs compatibles
-    Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
-
-    # Protection XSS
-    Header set X-XSS-Protection "1; mode=block"
-
-    # Empêche la détection automatique du type MIME (protection uploads)
-    Header set X-Content-Type-Options "nosniff"
-
-    # Interdit le framing du site (clickjacking)
-    Header always append X-Frame-Options SAMEORIGIN
-
-    # Politique de référent stricte (protection vie privée)
-    Header set Referrer-Policy "strict-origin-when-cross-origin"
-
-    # Content Security Policy :
-    # img-src * data: => autorise les images depuis n'importe où + base64, évite le blocage des thumbs plugins/CDN.
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data:; font-src 'self';"
-
-    # Feature Policy (Permissions Policy) : désactive un maximum de permissions navigateur
-    Header set Feature-Policy "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'self'; payment 'none';"
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+  Header set X-XSS-Protection "1; mode=block"
+  Header set X-Content-Type-Options "nosniff"
+  Header always append X-Frame-Options SAMEORIGIN
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Feature-Policy "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'self'; payment 'none';"
 </IfModule>
 
 
-# ———————————— OPTIMISATIONS & CACHE ————————————
+# ——————————————— ⚡️ OPTIMISATIONS & CACHE ———————————————
 
+# ✅ Encodage par défaut
 AddDefaultCharset UTF-8
+
 <IfModule mod_mime.c>
-    AddCharset UTF-8 .atom .css .js .json .rss .vtt .xml
-    AddType image/avif avif
-    AddType image/avif-sequence avifs
+  AddCharset UTF-8 .atom .css .js .json .rss .vtt .xml
+  AddType image/avif avif
+  AddType image/avif-sequence avifs
 </IfModule>
 
-# Désactive les headers ETag (évite les soucis de cache mal géré)
+# ❌ Désactive les ETags (évite bugs cache CDN ou navigateur)
 <IfModule mod_headers.c>
-    Header unset ETag
+  Header unset ETag
 </IfModule>
 FileETag None
 
-# ⏳ Expire headers par type de ressource (contrôle le cache navigateur)
+# ⏳ Cache navigateur optimisé (par type de fichier)
 <IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresDefault "access plus 1 month"
-    ExpiresByType text/html "access plus 0 seconds"
-    ExpiresByType application/json "access plus 0 seconds"
-    ExpiresByType text/xml "access plus 0 seconds"
-    ExpiresByType application/xml "access plus 0 seconds"
-    ExpiresByType application/rss+xml "access plus 1 hour"
-    ExpiresByType application/atom+xml "access plus 1 hour"
-    ExpiresByType image/x-icon "access plus 1 week"
-    ExpiresByType image/gif "access plus 4 months"
-    ExpiresByType image/png "access plus 4 months"
-    ExpiresByType image/jpeg "access plus 4 months"
-    ExpiresByType image/webp "access plus 4 months"
-    ExpiresByType video/ogg "access plus 4 months"
-    ExpiresByType audio/ogg "access plus 4 months"
-    ExpiresByType video/mp4 "access plus 4 months"
-    ExpiresByType video/webm "access plus 4 months"
-    ExpiresByType image/avif "access plus 4 months"
-    ExpiresByType image/avif-sequence "access plus 4 months"
-    ExpiresByType text/css "access plus 1 year"
-    ExpiresByType application/javascript "access plus 1 year"
-    ExpiresByType application/x-javascript "access plus 1 year"
-    ExpiresByType font/ttf "access plus 4 months"
-    ExpiresByType font/otf "access plus 4 months"
-    ExpiresByType font/woff "access plus 4 months"
-    ExpiresByType font/woff2 "access plus 4 months"
-    ExpiresByType image/svg+xml "access plus 4 months"
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType text/xml "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+  ExpiresByType application/rss+xml "access plus 1 hour"
+  ExpiresByType application/atom+xml "access plus 1 hour"
+  ExpiresByType image/x-icon "access plus 1 week"
+  ExpiresByType image/gif "access plus 4 months"
+  ExpiresByType image/png "access plus 4 months"
+  ExpiresByType image/jpeg "access plus 4 months"
+  ExpiresByType image/webp "access plus 4 months"
+  ExpiresByType video/ogg "access plus 4 months"
+  ExpiresByType audio/ogg "access plus 4 months"
+  ExpiresByType video/mp4 "access plus 4 months"
+  ExpiresByType video/webm "access plus 4 months"
+  ExpiresByType image/avif "access plus 4 months"
+  ExpiresByType image/avif-sequence "access plus 4 months"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType application/x-javascript "access plus 1 year"
+  ExpiresByType font/ttf "access plus 4 months"
+  ExpiresByType font/otf "access plus 4 months"
+  ExpiresByType font/woff "access plus 4 months"
+  ExpiresByType font/woff2 "access plus 4 months"
+  ExpiresByType image/svg+xml "access plus 4 months"
 </IfModule>
 
-# 📦 Compression Gzip avancée
+# 📦 Compression GZIP optimisée
 <IfModule mod_deflate.c>
-    SetOutputFilter DEFLATE
-    <IfModule mod_setenvif.c>
-        <IfModule mod_headers.c>
-            SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s*,?\s*)+|[X~-]{4,13}$ HAVE_Accept-Encoding
-            RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
-            SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|rar|zip|exe|flv|mov|wma|mp3|avi|swf|mp?g|mp4|webm|webp|pdf)$ no-gzip dont-vary
-        </IfModule>
-    </IfModule>
-    <IfModule mod_filter.c>
-        AddOutputFilterByType DEFLATE application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/html text/plain text/x-component text/xml
-    </IfModule>
+  SetOutputFilter DEFLATE
+  <IfModule mod_setenvif.c>
     <IfModule mod_headers.c>
-        Header append Vary: Accept-Encoding
+      SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s*,?\s*)+|[X~-]{4,13}$ HAVE_Accept-Encoding
+      RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
+      SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|rar|zip|exe|flv|mov|wma|mp3|avi|swf|mp?g|mp4|webm|webp|pdf)$ no-gzip dont-vary
     </IfModule>
+  </IfModule>
+  <IfModule mod_filter.c>
+    AddOutputFilterByType DEFLATE application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/html text/plain text/x-component text/xml
+  </IfModule>
+  <IfModule mod_headers.c>
+    Header append Vary: Accept-Encoding
+  </IfModule>
 </IfModule>
 
-# ———————————— RÈGLES WORDPRESS ————————————
 
-# 📝 Ne pas modifier cette section !
+# ——————————————— 🔄 RÈGLES WORDPRESS ———————————————
+
+# ⚠️ Ne pas modifier cette section sans savoir ce que vous faites !
 # BEGIN WordPress
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-    RewriteBase /
-    RewriteRule ^index\.php$ - [L]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /index.php [L]
+  RewriteEngine On
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  RewriteBase /
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
 </IfModule>
 # END WordPress
-
-# =========================================================
-# 👉 Prêt pour mutualisés modernes, sans blocage des thumbs plugins.
-# Ajoutez vos redirections 301 personnalisées ci-dessus, en suivant les exemples commentés.
-# =========================================================
 HTACCESS;
 }
 
